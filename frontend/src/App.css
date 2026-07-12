@@ -1,0 +1,244 @@
+/* Custom Global Modern Typography & Fluid Variables */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --border-color: #e2e8f0;
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.03), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+  --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text-main);
+  overflow-x: hidden;
+}
+
+/* Animations Hub */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseBorder {
+  0% { border-color: var(--border-color); }
+  50% { border-color: var(--primary); }
+  100% { border-color: var(--border-color); }
+}
+
+/* Base Layout & Responsive Structural Container */
+.container {
+  animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Ultra Modern Glassmorphism Card System */
+.card {
+  background: var(--surface);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  transition: var(--transition-smooth);
+  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.07);
+}
+
+/* Premium Minimalist Header/Navbar */
+.navbar {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  transition: var(--transition-smooth);
+}
+
+.nav-logo a {
+  background: linear-gradient(135deg, #0f172a 0%, #2563eb 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.03em;
+  transition: var(--transition-smooth);
+}
+
+.nav-logo a:hover {
+  opacity: 0.85;
+}
+
+/* Profile Icon Button Hover Micro-interactions */
+.profile-btn {
+  transition: var(--transition-smooth);
+  border-radius: 50%;
+  padding: 4px;
+}
+
+.profile-btn:hover {
+  transform: scale(1.08);
+  background-color: #f1f5f9;
+}
+
+.profile-btn svg circle, .profile-btn svg path {
+  transition: var(--transition-smooth);
+}
+
+.profile-btn:hover svg circle {
+  fill: var(--primary);
+}
+
+/* Premium Interactive Forms & Inputs */
+.form-group input, 
+.form-group select {
+  transition: var(--transition-smooth);
+  outline: none;
+  background-color: #fff;
+}
+
+.form-group input:focus, 
+.form-group select:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12) !important;
+}
+
+/* Smooth Interactive Button Architectural Framework */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--primary);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+/* Secondary & Destructive Button States */
+.btn-danger {
+  background-color: #ef4444 !important;
+}
+
+.btn-danger:hover {
+  background-color: #dc2626 !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2) !important;
+}
+
+.btn-success {
+  background-color: #10b981 !important;
+}
+
+.btn-success:hover {
+  background-color: #059669 !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Clean Professional Table Layout Framework */
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+th {
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+tr {
+  transition: var(--transition-smooth);
+}
+
+tr:hover td {
+  background-color: #f8fafc;
+}
+
+td {
+  transition: var(--transition-smooth);
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: -0.01em;
+}
+
+.status-badge.approved {
+  background-color: #d1fae5 !important;
+  color: #065f46 !important;
+}
+
+.status-badge.pending {
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
+}
+
+/* Matrix Asset Container Grid Styles */
+img[alt="Badge Matrix"] {
+  border-radius: var(--radius-sm);
+  transition: var(--transition-smooth);
+}
+
+img[alt="Badge Matrix"]:hover {
+  transform: scale(1.15);
+  box-shadow: var(--shadow-md);
+}
+
+/* Custom Scrollbar configuration for Smooth Layout Flows */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
