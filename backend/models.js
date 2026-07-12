@@ -1,5 +1,12 @@
 const mongoose = require('mongoose');
 
+// Counter Schema (for auto-incrementing Unique IDs like A00001, A00002...)
+const CounterSchema = new mongoose.Schema({
+  name: { type: String, required: true, unique: true },
+  seq: { type: Number, default: 0 }
+});
+const Counter = mongoose.model('Counter', CounterSchema);
+
 // User Schema (Admins and Employees)
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
@@ -31,6 +38,9 @@ const CitizenSchema = new mongoose.Schema({
   qrCodeData: { type: String }, // Base64 QR Image string
   publicLink: { type: String }, // Verification URL
 
+  // Auto-generated sequential unique ID (A00001, A00002, ...)
+  uniqueId: { type: String, unique: true },
+
   // New Fields added below 👇
   applicationNo: { type: String, required: true, unique: true },
   applicationDate: { type: Date, default: Date.now, required: true },
@@ -50,4 +60,4 @@ const CitizenSchema = new mongoose.Schema({
 const User = mongoose.model('User', UserSchema);
 const Citizen = mongoose.model('Citizen', CitizenSchema);
 
-module.exports = { User, Citizen };
+module.exports = { User, Citizen, Counter };

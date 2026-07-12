@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 const QRCode = require('qrcode');
 require('dotenv').config();
 
-const { User, Citizen } = require('./models');
+const { User, Citizen, Counter } = require('./models');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -18,6 +18,16 @@ app.use(express.json({ limit: '10mb' })); // increased limit to allow base64 pho
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('MongoDB connected'))
   .catch((err) => console.error('MongoDB connection error:', err));
+
+// Atomically generates the next sequential Unique ID (A00001, A00002, A00003...)
+async function generateUniqueId() {
+  const counter = await Counter.findOneAndUpdate(
+    { name: 'citizenId' },
+    { $inc: { seq: 1 } },
+    { new: true, upsert: true }
+  );
+  return 'A' + String(counter.seq).padStart(5, '0');
+}
 
 async function seedDatabase() {
   try {
@@ -44,6 +54,7 @@ async function seedDatabase() {
         emergencyContacts: "9876543210",
         personalContact: "9123456780",
         status: "Approved",
+        uniqueId: await generateUniqueId(),
         applicationNo: "APP-10001",
         applicationDate: new Date("2026-07-10"),
         address: "123 Main Street, Secunderabad",
@@ -123,6 +134,9 @@ app.post('/api/enrollments', async (req, res) => {
     if (pincode && !/^\d{6}$/.test(pincode)) {
       return res.status(400).json({ error: "Backend Validation Error: Pincode must be exactly 6 digits." });
     }
+
+    const newUniqueId = await generateUniqueId();
+
     const newEntry = await Citizen.create({
       name, dob, age: Number(age) || 60, bloodGroup, aadharId,
       maskedAadhar: `XXXX-XXXX-${aadharId.slice(-4)}`,
@@ -130,6 +144,7 @@ app.post('/api/enrollments', async (req, res) => {
       personalContact,
       status: 'Pending',
       qrCodeData: '',
+      uniqueId: newUniqueId,
       applicationNo,
       applicationDate: applicationDate || new Date(),
       address,
