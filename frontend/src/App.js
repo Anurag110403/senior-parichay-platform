@@ -397,7 +397,7 @@ function AdminDashboard() {
     try {
       const verificationLink = getVerifyLink(rowItem);
       // qzone adds extra quiet-zone modules around the code so it scans and prints more reliably
-      const reliableQR = `https://api.qrserver.com/v1/create-qr-code/?size=450x450&qzone=2&data=${encodeURIComponent(verificationLink)}&_=${Date.now()}`;
+      const reliableQR = `https://api.qrserver.com/v1/create-qr-code/?size=450x450&qzone=2&ecc=H&data=${encodeURIComponent(verificationLink)}&_=${Date.now()}`;
 
       await axios.patch(`${API_URL}/admin/enrollments/${rowItem._id}`, { 
         status,
@@ -459,6 +459,37 @@ function AdminDashboard() {
       alert('Could not download the QR code directly. Opening it in a new tab instead — right-click the image and choose "Save Image As".');
       window.open(qrUrl, '_blank');
     }
+  };
+
+  // Opens a dedicated print window with the QR sized to exactly 12mm x 12mm physical print size
+  const handlePrintBadgeQr = (qrUrl, citizenName) => {
+    const printWindow = window.open('', '_blank', 'width=400,height=400');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print QR - ${citizenName}</title>
+          <style>
+            @page { margin: 0; size: 12mm 12mm; }
+            html, body { margin: 0; padding: 0; }
+            body { display: flex; align-items: center; justify-content: center; }
+            img { width: 12mm; height: 12mm; display: block; }
+          </style>
+        </head>
+        <body>
+          <img src="${qrUrl}" crossorigin="anonymous" />
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.onload = () => {
+      const img = printWindow.document.querySelector('img');
+      const triggerPrint = () => {
+        printWindow.focus();
+        printWindow.print();
+      };
+      if (img.complete) triggerPrint();
+      else img.onload = triggerPrint;
+    };
   };
 
   return (
@@ -566,9 +597,22 @@ function AdminDashboard() {
                             style={{ padding: '6px', minWidth: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9' }} 
                             title="Download QR as JPG"
                           >
+
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                               <path d="M12 3V16M12 16L7 11M12 16L17 11" stroke="#0f172a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                               <path d="M3 20H21" stroke="#0f172a" strokeWidth="2.5" strokeLinecap="round"/>
+                            </svg>
+                          </button>
+
+                          <button 
+                            type="button"
+                            onClick={() => handlePrintBadgeQr(rowItem.qrCodeData, rowItem.name)}
+                            className="btn" 
+                            style={{ padding: '6px', minWidth: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9' }} 
+                            title="Print QR at 12mm badge size"
+                          >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z" stroke="#0f172a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
                           </button>
                         </div>
