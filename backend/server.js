@@ -218,9 +218,15 @@ app.delete('/api/enrollments/:id', async (req, res) => {
   }
 });
 
+// Public verification lookup — accepts either the short Unique ID (e.g. A00001)
+// or a legacy Mongo _id, so old printed/shared QR codes keep working.
 app.get('/api/public/verify/:id', async (req, res) => {
   try {
-    const item = await Citizen.findById(req.params.id);
+    const { id } = req.params;
+    let item = await Citizen.findOne({ uniqueId: id });
+    if (!item && mongoose.Types.ObjectId.isValid(id)) {
+      item = await Citizen.findById(id);
+    }
     if (item && item.status === 'Approved') return res.json(item);
     res.status(404).json({ error: "Profile not found or inactive." });
   } catch (err) {

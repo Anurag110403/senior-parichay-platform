@@ -7,6 +7,14 @@ const API_URL = process.env.REACT_APP_API_URL
   ? `${process.env.REACT_APP_API_URL}/api`  
   : "http://localhost:5000/api";
 
+// Builds the shortest reliable public verification link for a citizen row.
+// Prefers the short auto-generated Unique ID (e.g. A00001) over the long Mongo _id,
+// and uses the shorter /v/ route instead of /verify/ to keep the QR code data minimal.
+function getVerifyLink(rowItem) {
+  const identifier = rowItem.uniqueId || rowItem._id;
+  return `${window.location.origin}/v/${identifier}`;
+}
+
 function Layout({ children }) {
   const navigate = useNavigate();
   return (
@@ -385,21 +393,22 @@ function AdminDashboard() {
     }
   };
 
-const handleStatusUpdate = async (id, status) => {
-  try {
-    const verificationLink = `${window.location.origin}/verify/${id}`;
-    const reliableQR = `https://api.qrserver.com/v1/create-qr-code/?size=450x450&data=${encodeURIComponent(verificationLink)}&_=${Date.now()}`;
-    
-    await axios.patch(`${API_URL}/admin/enrollments/${id}`, { 
-      status,
-      qrCodeData: status === 'Approved' ? reliableQR : '',
-      verificationUrl: status === 'Approved' ? verificationLink : ''
-    });
-    fetchAdminData();
-  } catch (err) {
-    console.error(err);
-  }
-};
+  const handleStatusUpdate = async (rowItem, status) => {
+    try {
+      const verificationLink = getVerifyLink(rowItem);
+      // qzone adds extra quiet-zone modules around the code so it scans and prints more reliably
+      const reliableQR = `https://api.qrserver.com/v1/create-qr-code/?size=450x450&qzone=2&data=${encodeURIComponent(verificationLink)}&_=${Date.now()}`;
+
+      await axios.patch(`${API_URL}/admin/enrollments/${rowItem._id}`, { 
+        status,
+        qrCodeData: status === 'Approved' ? reliableQR : '',
+        verificationUrl: status === 'Approved' ? verificationLink : ''
+      });
+      fetchAdminData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleRemoveUser = async (id) => {
     if(!window.confirm("Are you sure you want to remove this record?")) return;
@@ -416,6 +425,40 @@ const handleStatusUpdate = async (id, status) => {
       setEditingRecord(null);
       fetchAdminData();
     } catch (err) {}
+  };
+
+  // Fetches the QR image, re-encodes it as a real JPG on a canvas, and downloads that —
+  // needed because the source image is cross-origin, so a plain <a download> is ignored
+  // by the browser and just opens the image in a new tab instead.
+  const handleDownloadQr = async (qrUrl, citizenName) => {
+    try {
+      const response = await fetch(qrUrl, { mode: 'cors' });
+      const blob = await response.blob();
+      const imageBitmap = await createImageBitmap(blob);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = imageBitmap.width;
+      canvas.height = imageBitmap.height;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(imageBitmap, 0, 0);
+
+      canvas.toBlob((jpgBlob) => {
+        const blobUrl = URL.createObjectURL(jpgBlob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `${citizenName.replace(/\s+/g, '_')}_badge.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+      }, 'image/jpeg', 0.95);
+    } catch (err) {
+      console.error('QR download failed:', err);
+      alert('Could not download the QR code directly. Opening it in a new tab instead — right-click the image and choose "Save Image As".');
+      window.open(qrUrl, '_blank');
+    }
   };
 
   return (
@@ -493,9 +536,9 @@ const handleStatusUpdate = async (id, status) => {
                           {rowItem.status || 'Pending'}
                         </span>
                         {rowItem.status === 'Approved' ? (
-                          <button className="btn" onClick={() => handleStatusUpdate(rowItem._id, 'Pending')} style={{ backgroundColor: '#e2e8f0', color: '#334155', padding: '4px 8px', fontSize: '0.75rem' }}>Revoke</button>
+                          <button className="btn" onClick={() => handleStatusUpdate(rowItem, 'Pending')} style={{ backgroundColor: '#e2e8f0', color: '#334155', padding: '4px 8px', fontSize: '0.75rem' }}>Revoke</button>
                         ) : (
-                          <button className="btn btn-success" onClick={() => handleStatusUpdate(rowItem._id, 'Approved')} style={{ padding: '4px 8px', fontSize: '0.75rem' }}>Approve</button>
+                          <button className="btn btn-success" onClick={() => handleStatusUpdate(rowItem, 'Approved')} style={{ padding: '4px 8px', fontSize: '0.75rem' }}>Approve</button>
                         )}
                       </div>
                     </td>
@@ -511,31 +554,35 @@ const handleStatusUpdate = async (id, status) => {
                             onClick={() => { 
                               setPreviewQrUrl(rowItem.qrCodeData); 
                               setPreviewCitizenName(rowItem.name); 
-                              setPreviewVerifyTarget(`${window.location.origin}/verify/${rowItem._id}`);
+                              setPreviewVerifyTarget(getVerifyLink(rowItem));
                             }}
                             style={{ width: '45px', height: '45px', border: '1px solid #cbd5e1', padding: '2px', backgroundColor: '#fff', borderRadius: '4px', cursor: 'pointer' }} 
                             title="Click to Verify & Preview"
                           />
-                          <a href={rowItem.qrCodeData} target="_blank" rel="noreferrer" download={`${rowItem.name}_badge.png`} style={{ display: 'inline-flex', alignItems: 'center' }}>
-                            <button className="btn" style={{ padding: '6px', minWidth: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9' }} title="Download QR">
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12 3V16M12 16L7 11M12 16L17 11" stroke="#0f172a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                <path d="M3 20H21" stroke="#0f172a" strokeWidth="2.5" strokeLinecap="round"/>
-                              </svg>
-                            </button>
-                          </a>
+                          <button 
+                            type="button"
+                            onClick={() => handleDownloadQr(rowItem.qrCodeData, rowItem.name)}
+                            className="btn" 
+                            style={{ padding: '6px', minWidth: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9' }} 
+                            title="Download QR as JPG"
+                          >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M12 3V16M12 16L7 11M12 16L17 11" stroke="#0f172a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                              <path d="M3 20H21" stroke="#0f172a" strokeWidth="2.5" strokeLinecap="round"/>
+                            </svg>
+                          </button>
                         </div>
                       ) : <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>No Asset</span>}
                     </td>
                     <td style={{ padding: '1rem' }}>
                       {rowItem.status === 'Approved' ? (
                         <a 
-                          href={`${window.location.origin}/verify/${rowItem._id}`}
+                          href={getVerifyLink(rowItem)}
                           target="_blank" 
                           rel="noreferrer" 
                           style={{ color: '#2563eb', fontSize: '0.85rem', fontWeight: '700', textDecoration: 'underline', wordBreak: 'break-all' }}
                         >
-                          {`${window.location.origin}/verify/${rowItem._id}`}
+                          {getVerifyLink(rowItem)}
                         </a>
                       ) : <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>Inactive</span>}
                     </td>
@@ -632,6 +679,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/user-dashboard" element={<UserDashboard />} />
+          <Route path="/v/:id" element={<PublicVerificationPage />} />
           <Route path="/verify/:id" element={<PublicVerificationPage />} />
         </Routes>
       </Layout>
