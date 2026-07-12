@@ -251,7 +251,7 @@ function AdminDashboard() {
 
   const handleStatusUpdate = async (id, status) => {
     try {
-      const verificationLink = `http://${IP}:3000/verify/${id}`;
+      const verificationLink = `${window.location.origin}/verify/${id}`;
       // Ultra high definition 450x450 scaling
       const reliableQR = `https://api.qrserver.com/v1/create-qr-code/?size=450x450&data=${encodeURIComponent(verificationLink)}`;
       
@@ -360,7 +360,7 @@ function AdminDashboard() {
                             onClick={() => { 
                               setPreviewQrUrl(rowItem.qrCodeData); 
                               setPreviewCitizenName(rowItem.name); 
-                              setPreviewVerifyTarget(`http://${IP}:3000/verify/${rowItem._id}`);
+                              setPreviewVerifyTarget(`${window.location.origin}/verify/${rowItem._id}`);
                             }}
                             style={{ width: '45px', height: '45px', border: '1px solid #cbd5e1', padding: '2px', backgroundColor: '#fff', borderRadius: '4px', cursor: 'pointer' }} 
                             title="Click to Verify & Preview"
@@ -379,12 +379,12 @@ function AdminDashboard() {
                     <td style={{ padding: '1rem' }}>
                       {rowItem.status === 'Approved' ? (
                         <a 
-                          href={`http://${IP}:3000/verify/${rowItem._id}`} 
+                          href={`${window.location.origin}/verify/${rowItem._id}`}
                           target="_blank" 
                           rel="noreferrer" 
                           style={{ color: '#2563eb', fontSize: '0.85rem', fontWeight: '700', textDecoration: 'underline', wordBreak: 'break-all' }}
                         >
-                          {`http://${IP}:3000/verify/${rowItem._id}`}
+                          {`${window.location.origin}/verify/${rowItem._id}`}
                         </a>
                       ) : <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>Inactive</span>}
                     </td>
