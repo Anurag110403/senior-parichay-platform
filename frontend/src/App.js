@@ -307,11 +307,31 @@ function EnrollmentForm({ onFormSubmit }) {
 function CreateUserForm() {
   const loggedInUser = JSON.parse(localStorage.getItem('user') || '{}');
   const [showForm, setShowForm] = useState(false);
+  const [showDirectory, setShowDirectory] = useState(false);
+  const [staffList, setStaffList] = useState([]);
+
   const [newName, setNewName] = useState('');
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [newDesignation, setNewDesignation] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+  const [newAddress, setNewAddress] = useState('');
   const [createUserMsg, setCreateUserMsg] = useState('');
   const [createUserError, setCreateUserError] = useState(false);
+
+  const fetchStaffList = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/admin/users`);
+      setStaffList(res.data);
+    } catch (err) {
+      console.error('Could not fetch staff accounts', err);
+    }
+  };
+
+  const toggleDirectory = () => {
+    if (!showDirectory) fetchStaffList();
+    setShowDirectory(!showDirectory);
+  };
 
   const handleCreateUser = async (e) => {
     e.preventDefault();
@@ -322,10 +342,14 @@ function CreateUserForm() {
         requesterRole: loggedInUser.role || 'admin',
         username: newUsername.trim(),
         password: newPassword,
-        name: newName.trim()
+        name: newName.trim(),
+        designation: newDesignation.trim(),
+        phone: newPhone.trim(),
+        address: newAddress.trim()
       });
       setCreateUserMsg(`Employee account "${newUsername.trim()}" created successfully.`);
-      setNewName(''); setNewUsername(''); setNewPassword('');
+      setNewName(''); setNewUsername(''); setNewPassword(''); setNewDesignation(''); setNewPhone(''); setNewAddress('');
+      if (showDirectory) fetchStaffList();
       setTimeout(() => setCreateUserMsg(''), 5000);
     } catch (err) {
       setCreateUserError(true);
@@ -333,12 +357,22 @@ function CreateUserForm() {
     }
   };
 
+  const handleRemoveStaff = async (id) => {
+    if (!window.confirm("Remove this staff account? This cannot be undone.")) return;
+    try {
+      await axios.delete(`${API_URL}/admin/users/${id}`);
+      fetchStaffList();
+    } catch (err) {}
+  };
+
   return (
     <div className="card" style={{ padding: '1.5rem 2rem', backgroundColor: '#fff', marginBottom: '0' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showForm ? '1.5rem' : 0 }}>
-        <div>
-          <h3 style={{ fontSize: '1.2rem', color: '#0f172a', fontWeight: '800', margin: 0 }}>Company Staff Accounts</h3>
-          <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0.25rem 0 0 0' }}>Create login credentials for employees who will operate this console.</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showForm || showDirectory ? '1.5rem' : 0 }}>
+        <div style={{ cursor: 'pointer' }} onClick={toggleDirectory}>
+          <h3 style={{ fontSize: '1.2rem', color: '#0f172a', fontWeight: '800', margin: 0 }}>
+            Company Staff Accounts {showDirectory ? '▲' : '▼'}
+          </h3>
+          <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0.25rem 0 0 0' }}>Click to view all joined staff members and their details.</p>
         </div>
         <button type="button" className="btn" onClick={() => setShowForm(!showForm)} style={{ padding: '0.6rem 1.25rem', fontWeight: '700', backgroundColor: showForm ? '#e2e8f0' : '#2563eb', color: showForm ? '#334155' : '#fff' }}>
           {showForm ? 'Cancel' : '+ Create Employee Account'}
@@ -346,10 +380,22 @@ function CreateUserForm() {
       </div>
 
       {showForm && (
-        <form onSubmit={handleCreateUser} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '480px' }}>
+        <form onSubmit={handleCreateUser} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '480px', marginBottom: '1.5rem' }}>
           <div className="form-group">
             <label style={{ fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem', display: 'block', fontSize: '0.9rem' }}>Full Name</label>
             <input type="text" value={newName} onChange={e => setNewName(e.target.value)} required style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+          </div>
+          <div className="form-group">
+            <label style={{ fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem', display: 'block', fontSize: '0.9rem' }}>Designation</label>
+            <input type="text" value={newDesignation} onChange={e => setNewDesignation(e.target.value)} placeholder="e.g. Field Officer" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+          </div>
+          <div className="form-group">
+            <label style={{ fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem', display: 'block', fontSize: '0.9rem' }}>Phone Number</label>
+            <input type="text" maxLength={10} value={newPhone} onChange={e => setNewPhone(e.target.value.replace(/\D/g, ''))} placeholder="10-digit mobile number" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+          </div>
+          <div className="form-group">
+            <label style={{ fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem', display: 'block', fontSize: '0.9rem' }}>Address</label>
+            <textarea value={newAddress} onChange={e => setNewAddress(e.target.value)} rows={2} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontFamily: 'inherit', resize: 'vertical' }} />
           </div>
           <div className="form-group">
             <label style={{ fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem', display: 'block', fontSize: '0.9rem' }}>Username</label>
@@ -364,8 +410,55 @@ function CreateUserForm() {
       )}
 
       {createUserMsg && (
-        <div style={{ marginTop: '1.25rem', padding: '0.85rem', backgroundColor: createUserError ? '#fef2f2' : '#ecfdf5', border: `1px solid ${createUserError ? '#ef4444' : '#10b981'}`, color: createUserError ? '#991b1b' : '#065f46', borderRadius: '8px', fontWeight: '700', textAlign: 'center', fontSize: '0.95rem' }}>
+        <div style={{ marginBottom: '1.5rem', padding: '0.85rem', backgroundColor: createUserError ? '#fef2f2' : '#ecfdf5', border: `1px solid ${createUserError ? '#ef4444' : '#10b981'}`, color: createUserError ? '#991b1b' : '#065f46', borderRadius: '8px', fontWeight: '700', textAlign: 'center', fontSize: '0.95rem' }}>
           {createUserMsg}
+        </div>
+      )}
+
+      {showDirectory && (
+        <div style={{ overflowX: 'auto' }}>
+          <div style={{ minWidth: '900px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+                  <th style={{ padding: '0.85rem', fontWeight: '800', color: '#475569', fontSize: '0.8rem' }}>NAME</th>
+                  <th style={{ padding: '0.85rem', fontWeight: '800', color: '#475569', fontSize: '0.8rem' }}>DESIGNATION</th>
+                  <th style={{ padding: '0.85rem', fontWeight: '800', color: '#475569', fontSize: '0.8rem' }}>USERNAME</th>
+                  <th style={{ padding: '0.85rem', fontWeight: '800', color: '#475569', fontSize: '0.8rem' }}>PASSWORD</th>
+                  <th style={{ padding: '0.85rem', fontWeight: '800', color: '#475569', fontSize: '0.8rem' }}>PHONE</th>
+                  <th style={{ padding: '0.85rem', fontWeight: '800', color: '#475569', fontSize: '0.8rem' }}>ADDRESS</th>
+                  <th style={{ padding: '0.85rem', fontWeight: '800', color: '#475569', fontSize: '0.8rem' }}>ROLE</th>
+                  <th style={{ padding: '0.85rem', fontWeight: '800', color: '#475569', fontSize: '0.8rem', textAlign: 'right' }}>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {staffList.length === 0 ? (
+                  <tr><td colSpan="8" style={{ padding: '1.5rem', textAlign: 'center', color: '#94a3b8' }}>No staff accounts found.</td></tr>
+                ) : (
+                  staffList.map((staffMember) => (
+                    <tr key={staffMember._id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '0.85rem', fontWeight: '700', color: '#0f172a' }}>{staffMember.name}</td>
+                      <td style={{ padding: '0.85rem', color: '#334155' }}>{staffMember.designation || 'N/A'}</td>
+                      <td style={{ padding: '0.85rem', color: '#334155', fontFamily: 'monospace' }}>{staffMember.username}</td>
+                      <td style={{ padding: '0.85rem', color: '#334155', fontFamily: 'monospace' }}>{staffMember.password}</td>
+                      <td style={{ padding: '0.85rem', color: '#334155' }}>{staffMember.phone || 'N/A'}</td>
+                      <td style={{ padding: '0.85rem', color: '#334155', fontSize: '0.85rem' }}>{staffMember.address || 'N/A'}</td>
+                      <td style={{ padding: '0.85rem' }}>
+                        <span style={{ padding: '0.25rem 0.6rem', borderRadius: '10px', fontSize: '0.75rem', fontWeight: '800', backgroundColor: staffMember.role === 'admin' ? '#dbeafe' : '#f1f5f9', color: staffMember.role === 'admin' ? '#1e40af' : '#475569' }}>
+                          {staffMember.role}
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.85rem', textAlign: 'right' }}>
+                        {staffMember.role !== 'admin' && (
+                          <button className="btn btn-danger" onClick={() => handleRemoveStaff(staffMember._id)} style={{ padding: '5px 10px', fontSize: '0.8rem' }}>Remove</button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

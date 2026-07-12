@@ -90,7 +90,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.post('/api/admin/create-user', async (req, res) => {
   try {
-    const { requesterRole, username, password, name } = req.body;
+    const { requesterRole, username, password, name, designation, phone, address } = req.body;
     if (requesterRole !== 'admin') {
       return res.status(403).json({ error: "Access denied. Only Admins can create company accounts." });
     }
@@ -98,10 +98,28 @@ app.post('/api/admin/create-user', async (req, res) => {
     if (userExists) {
       return res.status(400).json({ error: "Username already exists." });
     }
-    const newUser = await User.create({ username, password, name, role: 'employee' });
-    res.status(201).json({ message: "New user account created successfully", user: { username: newUser.username, name: newUser.name } });
+    const newUser = await User.create({ username, password, name, designation, phone, address, role: 'employee' });
+    res.status(201).json({ message: "New user account created successfully", user: newUser });
   } catch (err) {
     res.status(500).json({ error: "Server error creating user" });
+  }
+});
+
+app.get('/api/admin/users', async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch staff accounts" });
+  }
+});
+
+app.delete('/api/admin/users/:id', async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to remove staff account" });
   }
 });
 
