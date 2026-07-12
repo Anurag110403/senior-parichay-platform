@@ -318,21 +318,21 @@ function AdminDashboard() {
     }
   };
 
-  const handleStatusUpdate = async (id, status) => {
-    try {
-      const verificationLink = `${window.location.origin}/verify/${id}`;
-      const reliableQR = `https://api.qrserver.com/v1/create-qr-code/?size=450x450&data=${encodeURIComponent(verificationLink)}`;
-      
-      await axios.patch(`${API_URL}/admin/enrollments/${id}`, { 
-        status,
-        qrCodeData: status === 'Approved' ? reliableQR : '',
-        verificationUrl: status === 'Approved' ? verificationLink : ''
-      });
-      fetchAdminData();
-    } catch (err) {
-      console.error(err);
-    }
-  };
+const handleStatusUpdate = async (id, status) => {
+  try {
+    const verificationLink = `${window.location.origin}/verify/${id}`;
+    const reliableQR = `https://api.qrserver.com/v1/create-qr-code/?size=450x450&data=${encodeURIComponent(verificationLink)}&_=${Date.now()}`;
+    
+    await axios.patch(`${API_URL}/admin/enrollments/${id}`, { 
+      status,
+      qrCodeData: status === 'Approved' ? reliableQR : '',
+      verificationUrl: status === 'Approved' ? verificationLink : ''
+    });
+    fetchAdminData();
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   const handleRemoveUser = async (id) => {
     if(!window.confirm("Are you sure you want to remove this record?")) return;

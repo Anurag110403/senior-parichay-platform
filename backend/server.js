@@ -166,9 +166,7 @@ app.put('/api/enrollments/:id', async (req, res) => {
     currentItem.address = address;
     currentItem.pincode = pincode;
     currentItem.photo = photo || currentItem.photo;
-    if (currentItem.status === 'Approved') {
-      currentItem.qrCodeData = await QRCode.toDataURL(`http://localhost:3000/verify/${req.params.id}`, { width: 45, margin: 1 });
-    }
+    
     await currentItem.save();
     res.json({ success: true });
   } catch (err) {
@@ -178,14 +176,16 @@ app.put('/api/enrollments/:id', async (req, res) => {
 
 app.patch('/api/admin/enrollments/:id', async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, qrCodeData, verificationUrl } = req.body;
     const item = await Citizen.findById(req.params.id);
     if (!item) return res.status(404).json({ error: "Record not found" });
     item.status = status;
     if (status === 'Approved') {
-      item.qrCodeData = await QRCode.toDataURL(`http://localhost:3000/verify/${req.params.id}`, { width: 45, margin: 1 });
+      item.qrCodeData = qrCodeData || '';
+      item.verificationUrl = verificationUrl || '';
     } else {
       item.qrCodeData = '';
+      item.verificationUrl = '';
     }
     await item.save();
     res.json({ success: true });

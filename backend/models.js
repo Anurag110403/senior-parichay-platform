@@ -10,6 +10,7 @@ const UserSchema = new mongoose.Schema({
 
 // Citizen Schema (Enrollments)
 const CitizenSchema = new mongoose.Schema({
+  verificationUrl: { type: String },
   name: { type: String, required: true },
   dob: { type: Date, required: true },
   age: { type: Number, required: true },
