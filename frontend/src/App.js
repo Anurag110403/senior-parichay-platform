@@ -449,17 +449,20 @@ const handleStatusUpdate = async (id, status) => {
 
       <div className="card" style={{ padding: '1.5rem', backgroundColor: '#fff', overflowX: 'auto', width: '100%' }}>
         <h3 style={{ fontSize: '1.2rem', color: '#0f172a', fontWeight: '800', marginBottom: '1.25rem' }}>Registry System Operations</h3>
-        <div style={{ minWidth: '1350px' }}>
+        <div style={{ minWidth: '1650px' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+                <th style={{ padding: '1rem', fontWeight: '800', color: '#475569', fontSize: '0.85rem' }}>APPLICATION DATE</th>
                 <th style={{ padding: '1rem', fontWeight: '800', color: '#475569', fontSize: '0.85rem' }}>NAME</th>
                 <th style={{ padding: '1rem', fontWeight: '800', color: '#475569', fontSize: '0.85rem' }}>AADHAAR ID</th>
                 <th style={{ padding: '1rem', fontWeight: '800', color: '#475569', fontSize: '0.85rem' }}>AGE</th>
                 <th style={{ padding: '1rem', fontWeight: '800', color: '#475569', fontSize: '0.85rem' }}>DOB</th>
-                <th style={{ padding: '1rem', fontWeight: '800', color: '#475569', fontSize: '0.85rem' }}>REGISTRATION DATE</th>
+                <th style={{ padding: '1rem', fontWeight: '800', color: '#475569', fontSize: '0.85rem' }}>ADDRESS</th>
+                <th style={{ padding: '1rem', fontWeight: '800', color: '#475569', fontSize: '0.85rem' }}>PINCODE</th>
                 <th style={{ padding: '1rem', fontWeight: '800', color: '#475569', fontSize: '0.85rem' }}>EMERGENCY CONTACTS</th>
                 <th style={{ padding: '1rem', fontWeight: '800', color: '#475569', fontSize: '0.85rem' }}>STATUS</th>
+                <th style={{ padding: '1rem', fontWeight: '800', color: '#475569', fontSize: '0.85rem' }}>UNIQUE ID</th>
                 <th style={{ padding: '1rem', fontWeight: '800', color: '#475569', fontSize: '0.85rem' }}>QR CODE</th>
                 <th style={{ padding: '1rem', fontWeight: '800', color: '#475569', fontSize: '0.85rem' }}>LINKS</th>
                 <th style={{ padding: '1rem', fontWeight: '800', color: '#475569', fontSize: '0.85rem', textAlign: 'right' }}>ACTIONS</th>
@@ -468,18 +471,20 @@ const handleStatusUpdate = async (id, status) => {
             <tbody>
               {allEnrollments.length === 0 ? (
                 <tr>
-                  <td colSpan="10" style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8', fontWeight: '500' }}>No citizens registered in database console.</td>
+                  <td colSpan="13" style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8', fontWeight: '500' }}>No citizens registered in database console.</td>
                 </tr>
               ) : (
                 allEnrollments.map((rowItem) => (
                   <tr key={rowItem._id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '1rem', color: '#64748b', fontSize: '0.9rem' }}>
+                      {rowItem.applicationDate ? new Date(rowItem.applicationDate).toLocaleDateString('en-IN', {day: '2-digit', month: '2-digit', year: 'numeric'}) : 'N/A'}
+                    </td>
                     <td style={{ padding: '1rem', fontWeight: '700', color: '#0f172a' }}>{rowItem.name}</td>
                     <td style={{ padding: '1rem', color: '#334155', fontFamily: 'monospace', fontSize: '0.95rem' }}>{rowItem.aadharId}</td>
                     <td style={{ padding: '1rem', color: '#334155', fontWeight: '600' }}>{rowItem.age || 'N/A'}</td>
                     <td style={{ padding: '1rem', color: '#334155' }}>{rowItem.dob ? rowItem.dob.split('T')[0] : 'N/A'}</td>
-                    <td style={{ padding: '1rem', color: '#64748b', fontSize: '0.9rem' }}>
-                      {rowItem.createdAt ? new Date(rowItem.createdAt).toLocaleDateString('en-IN', {day: '2-digit', month: '2-digit', year: 'numeric'}) : 'Recently'}
-                    </td>
+                    <td style={{ padding: '1rem', color: '#334155', fontSize: '0.85rem' }}>{rowItem.address || 'N/A'}</td>
+                    <td style={{ padding: '1rem', color: '#334155', fontFamily: 'monospace' }}>{rowItem.pincode || 'N/A'}</td>
                     <td style={{ padding: '1rem', color: '#1e293b', fontWeight: '500' }}>{rowItem.emergencyContacts || 'None'}</td>
                     
                     <td style={{ padding: '1rem' }}>
@@ -493,6 +498,9 @@ const handleStatusUpdate = async (id, status) => {
                           <button className="btn btn-success" onClick={() => handleStatusUpdate(rowItem._id, 'Approved')} style={{ padding: '4px 8px', fontSize: '0.75rem' }}>Approve</button>
                         )}
                       </div>
+                    </td>
+                    <td style={{ padding: '1rem', fontWeight: '800', color: '#2563eb', fontFamily: 'monospace', fontSize: '0.9rem' }}>
+                      {rowItem.uniqueId || '—'}
                     </td>
                     <td style={{ padding: '1rem' }}>
                       {rowItem.status === 'Approved' && rowItem.qrCodeData ? (
