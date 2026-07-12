@@ -13,7 +13,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // increased limit to allow base64 photo uploads
 
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('MongoDB connected'))
@@ -42,6 +42,7 @@ async function seedDatabase() {
         aadharId: "123456789012",
         maskedAadhar: "XXXX-XXXX-9012",
         emergencyContacts: "9876543210",
+        personalContact: "9123456780",
         status: "Approved",
         applicationNo: "APP-10001",
         applicationDate: new Date("2026-07-10"),
@@ -115,17 +116,18 @@ app.get('/api/enrollments/search', async (req, res) => {
 
 app.post('/api/enrollments', async (req, res) => {
   try {
-    const { name, dob, age, bloodGroup, aadharId, emergencyContacts, applicationNo, applicationDate, address, pincode, photo } = req.body;
+    const { name, dob, age, bloodGroup, aadharId, emergencyContacts, personalContact, applicationNo, applicationDate, address, pincode, photo } = req.body;
     if (!/^\d{12}$/.test(aadharId)) {
       return res.status(400).json({ error: "Backend Validation Error: Aadhaar card must be exactly 12 digits." });
     }
-    if (!/^\d{6}$/.test(pincode)) {
+    if (pincode && !/^\d{6}$/.test(pincode)) {
       return res.status(400).json({ error: "Backend Validation Error: Pincode must be exactly 6 digits." });
     }
     const newEntry = await Citizen.create({
       name, dob, age: Number(age) || 60, bloodGroup, aadharId,
       maskedAadhar: `XXXX-XXXX-${aadharId.slice(-4)}`,
       emergencyContacts,
+      personalContact,
       status: 'Pending',
       qrCodeData: '',
       applicationNo,
@@ -142,11 +144,11 @@ app.post('/api/enrollments', async (req, res) => {
 
 app.put('/api/enrollments/:id', async (req, res) => {
   try {
-    const { name, dob, age, bloodGroup, aadharId, emergencyContacts, applicationNo, applicationDate, address, pincode, photo } = req.body;
+    const { name, dob, age, bloodGroup, aadharId, emergencyContacts, personalContact, applicationNo, applicationDate, address, pincode, photo } = req.body;
     if (!/^\d{12}$/.test(aadharId)) {
       return res.status(400).json({ error: "Backend Validation Error: Aadhaar card must be exactly 12 digits." });
     }
-    if (!/^\d{6}$/.test(pincode)) {
+    if (pincode && !/^\d{6}$/.test(pincode)) {
       return res.status(400).json({ error: "Backend Validation Error: Pincode must be exactly 6 digits." });
     }
     const currentItem = await Citizen.findById(req.params.id);
@@ -158,6 +160,7 @@ app.put('/api/enrollments/:id', async (req, res) => {
     currentItem.aadharId = aadharId;
     currentItem.maskedAadhar = `XXXX-XXXX-${aadharId.slice(-4)}`;
     currentItem.emergencyContacts = emergencyContacts;
+    currentItem.personalContact = personalContact;
     currentItem.applicationNo = applicationNo;
     currentItem.applicationDate = applicationDate;
     currentItem.address = address;
@@ -211,4 +214,3 @@ app.get('/api/public/verify/:id', async (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => console.log(`Database Engine running on port ${PORT}`));
-

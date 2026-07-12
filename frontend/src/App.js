@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useParams } 
 import axios from 'axios';
 import './App.css';
 
-// ⚠️ IMPORTANT: Toggle this to your exact Wi-Fi IP address when testing over actual smartphones
 const API_URL = process.env.REACT_APP_API_URL 
   ? `${process.env.REACT_APP_API_URL}/api`  
   : "http://localhost:5000/api";
@@ -90,6 +89,14 @@ function EnrollmentForm({ onFormSubmit }) {
   const [bloodGroup, setBloodGroup] = useState('');
   const [aadharId, setAadharId] = useState('');
   const [contacts, setContacts] = useState(['']);
+
+  // New fields
+  const [applicationNo, setApplicationNo] = useState('');
+  const [address, setAddress] = useState('');
+  const [pincode, setPincode] = useState('');
+  const [personalContact, setPersonalContact] = useState('');
+  const [photo, setPhoto] = useState('');
+  const [photoPreview, setPhotoPreview] = useState('');
   
   const [successStatusText, setSuccessStatusText] = useState('');
 
@@ -105,6 +112,17 @@ function EnrollmentForm({ onFormSubmit }) {
     } else { setAge(''); }
   }, [dob]);
 
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhoto(reader.result);
+      setPhotoPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSearchRecord = async () => {
     if (!searchAadhar) return;
     try {
@@ -115,10 +133,23 @@ function EnrollmentForm({ onFormSubmit }) {
       setBloodGroup(res.data.bloodGroup);
       setAadharId(res.data.aadharId);
       setContacts(res.data.emergencyContacts ? res.data.emergencyContacts.split(', ') : ['']);
+      setApplicationNo(res.data.applicationNo || '');
+      setAddress(res.data.address || '');
+      setPincode(res.data.pincode || '');
+      setPersonalContact(res.data.personalContact || '');
+      setPhoto(res.data.photo || '');
+      setPhotoPreview(res.data.photo || '');
       setSuccessStatusText('');
     } catch (err) {
       alert('No record found with this Aadhaar ID.');
     }
+  };
+
+  const resetForm = () => {
+    setName(''); setDob(''); setAge(''); setBloodGroup(''); setAadharId(''); setContacts(['']);
+    setApplicationNo(''); setAddress(''); setPincode(''); setPersonalContact('');
+    setPhoto(''); setPhotoPreview('');
+    setSearchAadhar(''); setActiveId('');
   };
 
   const executeSubmit = async (e) => {
@@ -129,6 +160,10 @@ function EnrollmentForm({ onFormSubmit }) {
       alert("Aadhaar number must be exactly 12 digits.");
       return;
     }
+    if (pincode && !/^\d{6}$/.test(pincode)) {
+      alert("Pincode must be exactly 6 digits.");
+      return;
+    }
 
     const payload = { 
       name: name.trim(), 
@@ -136,7 +171,12 @@ function EnrollmentForm({ onFormSubmit }) {
       age: Number(age), 
       bloodGroup, 
       aadharId: cleanAadhar, 
-      emergencyContacts: contacts.map(c => c.trim()).filter(Boolean).join(', ') 
+      emergencyContacts: contacts.map(c => c.trim()).filter(Boolean).join(', '),
+      applicationNo: applicationNo.trim(),
+      address: address.trim(),
+      pincode: pincode.trim(),
+      personalContact: personalContact.trim(),
+      photo
     };
 
     try {
@@ -148,10 +188,10 @@ function EnrollmentForm({ onFormSubmit }) {
         setSuccessStatusText("Citizen registered successfully");
       }
       
-      setName(''); setDob(''); setAge(''); setBloodGroup(''); setAadharId(''); setContacts(['']); setSearchAadhar(''); setActiveId('');
+      resetForm();
       if (onFormSubmit) onFormSubmit();
     } catch (err) { 
-      alert("Submission error. Please ensure the server is responding.");
+      alert(err.response?.data?.error || "Submission error. Please ensure the server is responding.");
     }
     setTimeout(() => setSuccessStatusText(''), 5000);
   };
@@ -172,6 +212,12 @@ function EnrollmentForm({ onFormSubmit }) {
 
       {(!isUpdateMode || activeId) && (
         <form onSubmit={executeSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+          <div className="form-group">
+            <label style={{ fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem', display: 'block', fontSize: '0.9rem' }}>Application No.</label>
+            <input type="text" value={applicationNo} onChange={e => setApplicationNo(e.target.value)} placeholder="e.g. APP-10001" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+          </div>
+
           <div className="form-group">
             <label style={{ fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem', display: 'block', fontSize: '0.9rem' }}>Full Name</label>
             <input type="text" value={name} onChange={e => setName(e.target.value)} required style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
@@ -199,6 +245,30 @@ function EnrollmentForm({ onFormSubmit }) {
               <label style={{ fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem', display: 'block', fontSize: '0.9rem' }}>Aadhaar ID</label>
               <input type="text" maxLength={12} value={aadharId} onChange={e => setAadharId(e.target.value.replace(/\D/g, ''))} required style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
             </div>
+          </div>
+
+          <div className="form-group">
+            <label style={{ fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem', display: 'block', fontSize: '0.9rem' }}>Address</label>
+            <textarea value={address} onChange={e => setAddress(e.target.value)} rows={3} placeholder="House No, Street, City" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontFamily: 'inherit', resize: 'vertical' }} />
+          </div>
+
+          <div style={{ display: 'flex', gap: '15px' }}>
+            <div className="form-group" style={{ flex: 1 }}>
+              <label style={{ fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem', display: 'block', fontSize: '0.9rem' }}>Pincode</label>
+              <input type="text" maxLength={6} value={pincode} onChange={e => setPincode(e.target.value.replace(/\D/g, ''))} placeholder="6-digit pincode" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+            </div>
+            <div className="form-group" style={{ flex: 1 }}>
+              <label style={{ fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem', display: 'block', fontSize: '0.9rem' }}>Personal Contact</label>
+              <input type="text" maxLength={10} value={personalContact} onChange={e => setPersonalContact(e.target.value.replace(/\D/g, ''))} placeholder="10-digit mobile number" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label style={{ fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem', display: 'block', fontSize: '0.9rem' }}>Photo (optional)</label>
+            <input type="file" accept="image/*" onChange={handlePhotoChange} style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+            {photoPreview && (
+              <img src={photoPreview} alt="Preview" style={{ marginTop: '0.75rem', width: '90px', height: '90px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+            )}
           </div>
 
           <div className="form-group">
@@ -231,7 +301,6 @@ function AdminDashboard() {
   const [allEnrollments, setAllEnrollments] = useState([]);
   const [editingRecord, setEditingRecord] = useState(null);
   
-  // States for Preview Modal Pop-up
   const [previewQrUrl, setPreviewQrUrl] = useState('');
   const [previewCitizenName, setPreviewCitizenName] = useState('');
   const [previewVerifyTarget, setPreviewVerifyTarget] = useState('');
@@ -252,7 +321,6 @@ function AdminDashboard() {
   const handleStatusUpdate = async (id, status) => {
     try {
       const verificationLink = `${window.location.origin}/verify/${id}`;
-      // Ultra high definition 450x450 scaling
       const reliableQR = `https://api.qrserver.com/v1/create-qr-code/?size=450x450&data=${encodeURIComponent(verificationLink)}`;
       
       await axios.patch(`${API_URL}/admin/enrollments/${id}`, { 
@@ -295,6 +363,12 @@ function AdminDashboard() {
               <div style={{ flex: 1 }}><label style={{ fontWeight: '700', fontSize: '0.85rem', display: 'block', marginBottom: '0.4rem' }}>Name</label><input type="text" value={editingRecord.name} onChange={e => setEditingRecord({...editingRecord, name: e.target.value})} required style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>
               <div style={{ flex: 1 }}><label style={{ fontWeight: '700', fontSize: '0.85rem', display: 'block', marginBottom: '0.4rem' }}>Blood Group</label><input type="text" value={editingRecord.bloodGroup} onChange={e => setEditingRecord({...editingRecord, bloodGroup: e.target.value})} required style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>
             </div>
+            <div style={{ display: 'flex', gap: '15px' }}>
+              <div style={{ flex: 1 }}><label style={{ fontWeight: '700', fontSize: '0.85rem', display: 'block', marginBottom: '0.4rem' }}>Application No.</label><input type="text" value={editingRecord.applicationNo || ''} onChange={e => setEditingRecord({...editingRecord, applicationNo: e.target.value})} style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>
+              <div style={{ flex: 1 }}><label style={{ fontWeight: '700', fontSize: '0.85rem', display: 'block', marginBottom: '0.4rem' }}>Personal Contact</label><input type="text" value={editingRecord.personalContact || ''} onChange={e => setEditingRecord({...editingRecord, personalContact: e.target.value})} style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>
+            </div>
+            <div><label style={{ fontWeight: '700', fontSize: '0.85rem', display: 'block', marginBottom: '0.4rem' }}>Address</label><input type="text" value={editingRecord.address || ''} onChange={e => setEditingRecord({...editingRecord, address: e.target.value})} style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>
+            <div><label style={{ fontWeight: '700', fontSize: '0.85rem', display: 'block', marginBottom: '0.4rem' }}>Pincode</label><input type="text" value={editingRecord.pincode || ''} onChange={e => setEditingRecord({...editingRecord, pincode: e.target.value})} style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>
             <div><label style={{ fontWeight: '700', fontSize: '0.85rem', display: 'block', marginBottom: '0.4rem' }}>Emergency Contacts</label><input type="text" value={editingRecord.emergencyContacts} onChange={e => setEditingRecord({...editingRecord, emergencyContacts: e.target.value})} required style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '0.5rem' }}>
               <button type="submit" className="btn" style={{ padding: '0.5rem 1.5rem', fontSize: '0.9rem' }}>Save</button>
@@ -402,7 +476,6 @@ function AdminDashboard() {
         </div>
       </div>
 
-      {/* FIXED PREVIEW MODAL: High-res alignment + embedded live validation text rendering below */}
       {previewQrUrl && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
           <div className="card" style={{ maxWidth: '420px', width: '92%', padding: '2rem', textAlign: 'center', position: 'relative', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', backgroundColor: '#fff' }}>
@@ -457,11 +530,16 @@ function PublicVerificationPage() {
     <div className="card" style={{ maxWidth: '500px', margin: '4rem auto', padding: '2.5rem 2rem', backgroundColor: '#fff' }}>
       <h2 style={{ color: '#2563eb', fontSize: '1.75rem', fontWeight: '800', marginBottom: '0.5rem', textAlign: 'center' }}>Verification Profile</h2>
       <div style={{ width: '50px', height: '4px', backgroundColor: '#10b981', margin: '1rem auto 1.5rem auto', borderRadius: '2px' }}></div>
+      {data.photo && (
+        <img src={data.photo} alt={data.name} style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '50%', display: 'block', margin: '0 auto 1.25rem auto', border: '3px solid #2563eb' }} />
+      )}
       <div style={{ textAlign: 'left', lineHeight: '2.2', fontSize: '1.05rem', color: '#1e293b' }}>
         <p><strong>Name:</strong> <span style={{ marginLeft: '8px', color: '#0f172a', fontWeight: '600' }}>{data.name}</span></p>
         <p><strong>Age:</strong> <span style={{ marginLeft: '8px', color: '#0f172a', fontWeight: '600' }}>{data.age}</span></p>
         <p><strong>Blood Group:</strong> <span style={{ marginLeft: '8px', color: '#0f172a', fontWeight: '600' }}>{data.bloodGroup}</span></p>
         <p><strong>Aadhaar ID:</strong> <span style={{ marginLeft: '8px', color: '#0f172a', fontWeight: '600', fontFamily: 'monospace' }}>{data.maskedAadhar || `XXXX-XXXX-${data.aadharId?.slice(-4)}`}</span></p>
+        {data.address && <p><strong>Address:</strong> <span style={{ marginLeft: '8px', color: '#0f172a', fontWeight: '600' }}>{data.address} {data.pincode ? `- ${data.pincode}` : ''}</span></p>}
+        {data.personalContact && <p><strong>Contact:</strong> <span style={{ marginLeft: '8px', color: '#0f172a', fontWeight: '600' }}>{data.personalContact}</span></p>}
         <p><strong>Emergency Contacts:</strong> <span style={{ marginLeft: '8px', color: '#ef4444', fontWeight: '700' }}>{data.emergencyContacts}</span></p>
       </div>
     </div>
