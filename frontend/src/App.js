@@ -90,7 +90,6 @@ function EnrollmentForm({ onFormSubmit }) {
   const [aadharId, setAadharId] = useState('');
   const [contacts, setContacts] = useState(['']);
 
-  // New fields
   const [applicationNo, setApplicationNo] = useState('');
   const [address, setAddress] = useState('');
   const [pincode, setPincode] = useState('');
@@ -297,6 +296,74 @@ function EnrollmentForm({ onFormSubmit }) {
   );
 }
 
+function CreateUserForm() {
+  const loggedInUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const [showForm, setShowForm] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newUsername, setNewUsername] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [createUserMsg, setCreateUserMsg] = useState('');
+  const [createUserError, setCreateUserError] = useState(false);
+
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    setCreateUserMsg('');
+    setCreateUserError(false);
+    try {
+      await axios.post(`${API_URL}/admin/create-user`, {
+        requesterRole: loggedInUser.role || 'admin',
+        username: newUsername.trim(),
+        password: newPassword,
+        name: newName.trim()
+      });
+      setCreateUserMsg(`Employee account "${newUsername.trim()}" created successfully.`);
+      setNewName(''); setNewUsername(''); setNewPassword('');
+      setTimeout(() => setCreateUserMsg(''), 5000);
+    } catch (err) {
+      setCreateUserError(true);
+      setCreateUserMsg(err.response?.data?.error || 'Failed to create employee account.');
+    }
+  };
+
+  return (
+    <div className="card" style={{ padding: '1.5rem 2rem', backgroundColor: '#fff', marginBottom: '0' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showForm ? '1.5rem' : 0 }}>
+        <div>
+          <h3 style={{ fontSize: '1.2rem', color: '#0f172a', fontWeight: '800', margin: 0 }}>Company Staff Accounts</h3>
+          <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0.25rem 0 0 0' }}>Create login credentials for employees who will operate this console.</p>
+        </div>
+        <button type="button" className="btn" onClick={() => setShowForm(!showForm)} style={{ padding: '0.6rem 1.25rem', fontWeight: '700', backgroundColor: showForm ? '#e2e8f0' : '#2563eb', color: showForm ? '#334155' : '#fff' }}>
+          {showForm ? 'Cancel' : '+ Create Employee Account'}
+        </button>
+      </div>
+
+      {showForm && (
+        <form onSubmit={handleCreateUser} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '480px' }}>
+          <div className="form-group">
+            <label style={{ fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem', display: 'block', fontSize: '0.9rem' }}>Full Name</label>
+            <input type="text" value={newName} onChange={e => setNewName(e.target.value)} required style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+          </div>
+          <div className="form-group">
+            <label style={{ fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem', display: 'block', fontSize: '0.9rem' }}>Username</label>
+            <input type="text" value={newUsername} onChange={e => setNewUsername(e.target.value)} required style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+          </div>
+          <div className="form-group">
+            <label style={{ fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem', display: 'block', fontSize: '0.9rem' }}>Password</label>
+            <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required minLength={4} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+          </div>
+          <button type="submit" className="btn" style={{ padding: '0.75rem', fontWeight: '700' }}>Create Account</button>
+        </form>
+      )}
+
+      {createUserMsg && (
+        <div style={{ marginTop: '1.25rem', padding: '0.85rem', backgroundColor: createUserError ? '#fef2f2' : '#ecfdf5', border: `1px solid ${createUserError ? '#ef4444' : '#10b981'}`, color: createUserError ? '#991b1b' : '#065f46', borderRadius: '8px', fontWeight: '700', textAlign: 'center', fontSize: '0.95rem' }}>
+          {createUserMsg}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AdminDashboard() {
   const [allEnrollments, setAllEnrollments] = useState([]);
   const [editingRecord, setEditingRecord] = useState(null);
@@ -354,6 +421,8 @@ const handleStatusUpdate = async (id, status) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', width: '100%' }}>
       <h2 style={{ fontSize: '1.8rem', color: '#0f172a', fontWeight: '800' }}>Admin Dashboard Console</h2>
+
+      <CreateUserForm />
 
       {editingRecord && (
         <div className="card" style={{ border: '2px solid #2563eb', padding: '1.5rem 2rem', backgroundColor: '#fff' }}>
